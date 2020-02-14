@@ -1,109 +1,35 @@
 # TooltipService
-> The ```TooltipService``` provides the easiest way in order to add tooltips to the custom visuals.
 
-The ```powerbi.extensibility.utils.tooltip``` module provides the following interface and function:
-
-* [createTooltipServiceWrapper](#createtooltipservicewrapper)
-* [ITooltipServiceWrapper](#itooltipservicewrapper)
-  * [addTooltip](#itooltipservicewrapperaddtooltip)
-  * [hide](#itooltipservicewrapperhide)
-
-## createTooltipServiceWrapper
-This function creates an instance of ITooltipServiceWrapper.
+# Example
 
 ```typescript
-function createTooltipServiceWrapper(tooltipService: ITooltipService, rootElement: Element, handleTouchDelay?: number): ITooltipServiceWrapper;
-```
 
-The ```ITooltipService``` is available in [IVisualHost](https://github.com/Microsoft/PowerBI-visuals-tools/blob/67fe16f2f4f0269bc4c79fe638d36bde47552aa3/templates/visuals/.api/v1.3.0/PowerBI-visuals.d.ts#L1267).
+import * as tooltip from 'powerbi-visuals-utils-tooltiputils';
 
-### Example
-
-```typescript
-import tooltip = powerbi.extensibility.utils.tooltip;
+import * as $ from "jquery";
+import * as d3 from "d3";
 
 export class YourVisual implements IVisual {
     // implementation of IVisual.
-
+    private tooltipServiceWrapper: tooltip.ITooltipServiceWrapper;
     constructor(options: VisualConstructorOptions) {
-        tooltip.createTooltipServiceWrapper(
-            options.host.tooltipService,
-            options.element);
-
-        // returns: an instance of ITooltipServiceWrapper.
+        tooltip.createTooltipServiceWrapper(options.host.tooltipService,options.element);
+        this.tooltipServiceWrapper = tooltip.createTooltipServiceWrapper(options.host.tooltipService, $("body").get(0));
     }
+    
+    public update(options: VisualUpdateOptions) {
+         var element = d3.select("#myContainer .td").data([{
+           tooltipInfo: [{
+               displayName: "Test",
+               value: "Değer"
+           }
+            ]
+        }]);
+
+        this.tooltipServiceWrapper.addTooltip<tooltip.TooltipEnabledDataPoint>(element, (eventArgs: tooltip.TooltipEventArgs<tooltip.TooltipEnabledDataPoint>) => {
+            return eventArgs.data.tooltipInfo;
+        });
+   }
 }
 ```
 
-You can take a look at the example code of the custom visual [here](https://github.com/Microsoft/powerbi-visuals-sankey/blob/4d544ea145b4e15006083a3610dfead3da5f61a4/src/visual.ts#L210).
-
-## ITooltipServiceWrapper
-This interface describes public methods of the TooltipService.
-
-```typescript
-interface ITooltipServiceWrapper {
-    addTooltip<T>(selection: d3.Selection<any>, getTooltipInfoDelegate: (args: TooltipEventArgs<T>) => VisualTooltipDataItem[], getDataPointIdentity?: (args: TooltipEventArgs<T>) => ISelectionId, reloadTooltipDataOnMouseMove?: boolean): void;
-    hide(): void;
-}
-```
-
-### ITooltipServiceWrapper.addTooltip
-
-This method adds tooltips to the current selection.
-
-```typescript
-addTooltip<T>(selection: d3.Selection<any>, getTooltipInfoDelegate: (args: TooltipEventArgs<T>) => VisualTooltipDataItem[], getDataPointIdentity?: (args: TooltipEventArgs<T>) => ISelectionId, reloadTooltipDataOnMouseMove?: boolean): void;
-```
-
-#### Example
-
-```typescript
-import tooltip = powerbi.extensibility.utils.tooltip;
-import TooltipEnabledDataPoint = powerbi.extensibility.utils.tooltip.TooltipEnabledDataPoint;
-import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
-
-let bodyElement = d3.select("body");
-
-let element = bodyElement
-    .append("div")
-    .style({
-        "background-color": "green",
-        "width": "150px",
-        "height": "150px"
-    })
-    .classed("visual", true)
-    .data([{
-        tooltipInfo: [{
-            displayName: "Power BI",
-            value: 2016
-        }]
-    }]);
-
-let tooltipServiceWrapper = tooltip.createTooltipServiceWrapper(tooltipService, bodyElement.get(0)); // tooltipService is from the IVisualHost.
-
-tooltipServiceWrapper.addTooltip<TooltipEnabledDataPoint>(element, (eventArgs: TooltipEventArgs<TooltipEnabledDataPoint>) => {
-    return eventArgs.data.tooltipInfo;
-});
-
-// You will see a tooltip if you mouseover the element.
-```
-
-You can take a look at the example code of the custom visual [here](https://github.com/Microsoft/powerbi-visuals-sankey/blob/4d544ea145b4e15006083a3610dfead3da5f61a4/src/visual.ts#L1088).
-
-## ITooltipServiceWrapper.hide
-
-This method hides the tooltip.
-
-```typescript
-hide(): void;
-```
-
-### Example
-
-```typescript
-import tooltip = powerbi.extensibility.utils.tooltip;
-
-let tooltipServiceWrapper = tooltip.createTooltipServiceWrapper(options.host.tooltipService, options.element); // options is from the VisualConstructorOptions.
-
-tooltipServiceWrapper.hide();
-```
